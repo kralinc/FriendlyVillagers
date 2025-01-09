@@ -1,16 +1,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using NCMS;
+using NeoModLoader.api;
 using UnityEngine;
 using ReflectionUtility;
 
 namespace FriendlyVillagers{
-    [ModEntry]
-    class Main : MonoBehaviour{
-
-        void Awake(){
-            Patches.init();
+    public class ModClass : BasicMod<ModClass>
+    {
+        protected override void OnModLoad()
+        {
+            Patches.init(this.GetConfig());
+            LogInfo("Friendly Villagers Mod Loaded");
         }
     }
 }

@@ -1,7 +1,8 @@
 using System;
 using System.IO;
 using System.Reflection;
-using NCMS;
+using NeoModLoader.api;
+using NeoModLoader.General;
 using UnityEngine;
 using ReflectionUtility;
 using HarmonyLib;
@@ -14,8 +15,10 @@ namespace FriendlyVillagers
     {
         public static Harmony harmony = new Harmony("cd.mymod.wb.friendlyvillagers");
         public static bool turnOnFriendlyVillagers = true;
+        public static ModConfig conf = null;
 
-        public static void init() {
+        public static void init(ModConfig theConf) {
+            conf = theConf;
             harmony.Patch(
                 AccessTools.Method(typeof(BaseSimObject), "canAttackTarget"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "canAttackTarget_Prefix"))
