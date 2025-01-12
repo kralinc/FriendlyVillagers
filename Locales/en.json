@@ -1,5 +1,5 @@
 {
-    "allowDestroyBuildings": "Allow Destroying Different-Race Buildings",
-    "allowDestroyBuildings Description": "Allow destroying buildings of different-race empires?",
+    "allowDestroyBuildings": "Allow Soldiers to Destroy City Buildings",
+    "allowDestroyBuildings Description": "Let soldiers destroy city buildings during wars?",
     "FV": "Friendly Villagers"
 }

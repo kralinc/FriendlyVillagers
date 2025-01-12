@@ -39,6 +39,10 @@ namespace FriendlyVillagers
                 AccessTools.Method(typeof(BehFindEmptyNearbyCity), "getEmptyCity"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "getEmptyCity_Prefix"))
             );
+            harmony.Patch(
+                AccessTools.Method(typeof(City), "addZone"),
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "addZone_Prefix"))
+            );
         }
 
         public static bool getEmptyCity_Prefix(WorldTile pFromTile, Race pRace, ref City __result)
@@ -93,7 +97,6 @@ namespace FriendlyVillagers
                     return false;
                 }
             }
-            //WorldBoxConsole.Console.print("isPossibleToJoin for " + city.data.name + " resolved True for " + pActor.asset.race);
             __result = true;
             return false;
         }
@@ -131,6 +134,8 @@ namespace FriendlyVillagers
         public static bool canAttackTarget_Prefix(BaseSimObject pTarget, BaseSimObject __instance, ref bool __result)
         {
 
+            bool allowDestroyBuildings = (bool) conf["FV"]["allowDestroyBuildings"].GetValue();
+
             if (!__instance.isAlive())
             {
                 __result = false;
@@ -144,7 +149,6 @@ namespace FriendlyVillagers
             bool flag = __instance.isActor();
             Race race;
             WeaponType weaponType;
-            bool raceFlag = false;
             if (flag)
             {
                 if (__instance.a.asset.skipFightLogic)
@@ -190,12 +194,12 @@ namespace FriendlyVillagers
                 }
                 if (!actor.kingdom.asset.mad && !__instance.kingdom.asset.mad && !World.world.worldLaws.world_law_angry_civilians.boolVal)
                 {
-                    if ((actor.race == race || turnOnFriendlyVillagers) && actor.professionAsset.is_civilian)
+                    if (actor.professionAsset.is_civilian)
                     {
                         __result = false;
                         return false;
                     }
-                    if ((actor.race == race || turnOnFriendlyVillagers) && flag && (__instance.a.professionAsset.is_civilian))
+                    if (flag && __instance.a.professionAsset.is_civilian)
                     {
                         __result = false;
                         return false;
@@ -210,19 +214,33 @@ namespace FriendlyVillagers
             else
             {
                 Building building = pTarget.b;
-                if (__instance.kingdom.isCiv() && building.asset.cityBuilding && !building.asset.tower && flag && __instance.a.professionAsset.is_civilian && !World.world.worldLaws.world_law_angry_civilians.boolVal && (building.kingdom.race == __instance.kingdom.race || turnOnFriendlyVillagers))
-                {
-                    __result = false;
-                    return false;
-                }
-                else if (__instance.kingdom.isNomads() && building.asset.cityBuilding)
+                if (__instance.kingdom.isCiv() && building.asset.cityBuilding && building.asset.tower && flag && __instance.a.professionAsset.is_civilian 
+                    && !World.world.worldLaws.world_law_angry_civilians.boolVal && (building.kingdom.race == __instance.kingdom.race || !allowDestroyBuildings))
                 {
                     __result = false;
                     return false;
                 }
                 if (flag)
                 {
-                    __result = __instance.a.asset.canAttackBuildings || (__instance.a.asset.canAttackBrains && pTarget.kingdom.asset.brain);
+                    if (__instance.a.professionAsset.is_civilian && building.asset.cityBuilding && building.kingdom != null) {
+                        __result = false;
+                        return false;
+                    }
+                    if (__instance.a.professionAsset.can_capture && building.asset.cityBuilding && !allowDestroyBuildings) {
+                        __result = false;
+                        return false;
+                    }
+                    if (__instance.a.asset.canAttackBuildings)
+                    {
+                        __result = true;
+                        return false;
+                    }
+                    if (__instance.a.asset.canAttackBrains && pTarget.kingdom.asset.brain)
+                    {
+                        __result = true;
+                        return false;
+                    }
+                    __result = false;
                     return false;
                 }
             }
@@ -248,6 +266,38 @@ namespace FriendlyVillagers
                 }
             }
             __result = true;
+            return false;
+        }
+
+        public static bool addZone_Prefix(TileZone pZone, City __instance) {
+            if (__instance.zones.Contains(pZone))
+            {
+                return false;
+            }
+            if (pZone.city != null)
+            {
+                pZone.city.removeZone(pZone);
+            }
+            __instance.zones.Add(pZone);
+            pZone.setCity(__instance);
+            __instance.updateCityCenter();
+            if (World.world.city_zone_helper.city_place_finder.hasPossibleZones())
+            {
+                World.world.city_zone_helper.city_place_finder.setDirty();
+            }
+            __instance.setStatusDirty();
+            Toolbox.temp_list_buildings_2.Clear();
+            Toolbox.temp_list_buildings_2.AddRange(pZone.abandoned);
+            for (int i = 0; i < Toolbox.temp_list_buildings_2.Count; i++)
+            {
+                Building building = Toolbox.temp_list_buildings_2[i];
+                if (building.asset.cityBuilding && building.data.state == BuildingState.CivAbandoned)
+                {
+                    __instance.addBuilding(building);
+                    building.retake();
+                }
+            }
+
             return false;
         }
     }

@@ -4,7 +4,7 @@
             "Id": "allowDestroyBuildings",
             "Type": "SWITCH",
             "IconPath": "ui/icons/iconHideUI",
-            "BoolVal": false        
+            "BoolVal": true        
         }
     ]
 }
