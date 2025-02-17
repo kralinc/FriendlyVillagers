@@ -14,7 +14,6 @@ namespace FriendlyVillagers
     class Patches : MonoBehaviour
     {
         public static Harmony harmony = new Harmony("cd.mymod.wb.friendlyvillagers");
-        public static bool turnOnFriendlyVillagers = true;
         public static ModConfig conf = null;
 
         public static void init(ModConfig theConf) {
@@ -47,6 +46,11 @@ namespace FriendlyVillagers
 
         public static bool getEmptyCity_Prefix(WorldTile pFromTile, Race pRace, ref City __result)
         {
+            bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
+            if (!modEnabled) {
+                return true;
+            }
+
             BehaviourActionActor.temp_cities.Clear();
             foreach (City item in BehaviourActionBase<Actor>.world.cities.list)
             {
@@ -63,6 +67,12 @@ namespace FriendlyVillagers
 
         public static bool isPossibleToJoin_Prefix(Actor pActor, ref bool __result)
         {
+
+            bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
+            if (!modEnabled) {
+                return true;
+            }
+
             City city = pActor.currentTile.zone.city;
             if (city == null)
             {
@@ -103,6 +113,11 @@ namespace FriendlyVillagers
 
         public static bool findSameRaceActor_Prefix(Actor pActor, ref BehResult __result)
         {
+            bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
+            if (!modEnabled) {
+                return true;
+            }
+
             Actor beh_actor_target = null;
             pActor.currentTile.region.island.actors.ShuffleOne();
             foreach (Actor actor in pActor.currentTile.region.island.actors)
@@ -123,6 +138,10 @@ namespace FriendlyVillagers
         }
 
         public static bool updateConquest_Prefix(Actor pActor, City __instance) {
+            bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
+            if (!modEnabled) {
+                return true;
+            }
             if (pActor.kingdom.isCiv() && (pActor.kingdom == __instance.kingdom || pActor.kingdom.isEnemy(__instance.kingdom)))
             {
                 __instance.addCapturePoints(pActor, 1);
@@ -135,6 +154,11 @@ namespace FriendlyVillagers
         {
 
             bool allowDestroyBuildings = (bool) conf["FV"]["allowDestroyBuildings"].GetValue();
+            bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
+
+            if (!modEnabled) {
+                return true;
+            }
 
             if (!__instance.isAlive())
             {
@@ -147,7 +171,6 @@ namespace FriendlyVillagers
                 return false;
             }
             bool flag = __instance.isActor();
-            Race race;
             WeaponType weaponType;
             if (flag)
             {
@@ -156,12 +179,10 @@ namespace FriendlyVillagers
                     __result = false;
                     return false;
                 }
-                race = __instance.a.race;
                 weaponType = __instance.a.s_attackType;
             }
             else
             {
-                race = __instance.b.kingdom.race;
                 weaponType = WeaponType.Range;
             }
             if (pTarget.isActor())
@@ -270,6 +291,10 @@ namespace FriendlyVillagers
         }
 
         public static bool addZone_Prefix(TileZone pZone, City __instance) {
+            bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
+            if (!modEnabled) {
+                return true;
+            }
             if (__instance.zones.Contains(pZone))
             {
                 return false;
