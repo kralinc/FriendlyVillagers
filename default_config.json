@@ -1,6 +1,12 @@
 {
     "FV": [
         {
+            "Id": "enableMod",
+            "Type": "SWITCH",
+            "IconPath": "ui/icons/iconHideGUI",
+            "BoolVal": true
+        },
+        {
             "Id": "allowDestroyBuildings",
             "Type": "SWITCH",
             "IconPath": "ui/icons/iconHideUI",

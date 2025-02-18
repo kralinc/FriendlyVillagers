@@ -1,5 +1,7 @@
 {
     "allowDestroyBuildings": "Allow Soldiers to Destroy City Buildings",
     "allowDestroyBuildings Description": "Let soldiers destroy city buildings during wars?",
+    "enableMod": "Enable Mod",
+    "enableMod Description": "Turns the mod on or off.",
     "FV": "Friendly Villagers"
 }
