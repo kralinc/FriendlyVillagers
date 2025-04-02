@@ -1,7 +1,9 @@
 {
-    "allowDestroyBuildings": "Allow Soldiers to Destroy City Buildings",
-    "allowDestroyBuildings Description": "Let soldiers destroy city buildings during wars?",
-    "enableMod": "Enable Mod",
-    "enableMod Description": "Turns the mod on or off.",
-    "FV": "Friendly Villagers"
+    "allowSubspecies": "Allow Different Subspecies",
+    "allowDestroyBuildings Description": "Allow different subspecies in the same kingdom.",
+    "allowSpecies": "Allow Different Species",
+    "allowSpecies Description": "Allow different species in the same kingdom.",
+    "allowCulture": "Allow Different Cultures",
+    "allowCulture Description": "Allow different cultures in the same kingdom.",
+    "FV": "Tolerant Empires"
 }

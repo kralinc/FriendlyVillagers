@@ -19,52 +19,84 @@ namespace FriendlyVillagers
         public static void init(ModConfig theConf) {
             conf = theConf;
             harmony.Patch(
-                AccessTools.Method(typeof(BaseSimObject), "canAttackTarget"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "canAttackTarget_Prefix"))
+                AccessTools.Method(typeof(City), "isWelcomedToJoin"),
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "isWelcomedToJoin_Prefix"))
             );
-            harmony.Patch(
-                AccessTools.Method(typeof(City), "updateConquest"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "updateConquest_Prefix"))
+            /*harmony.Patch(
+                AccessTools.Method(typeof(BehJoinCity), "isPossibleToJoin"),
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "isPossibleToJoin_Prefix"))
             );
             harmony.Patch(
                 AccessTools.Method(typeof(BehFindSameRaceActor), "execute"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "findSameRaceActor_Prefix"))
             );
             harmony.Patch(
-                AccessTools.Method(typeof(BehJoinCity), "isPossibleToJoin"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "isPossibleToJoin_Prefix"))
-            );
-            harmony.Patch(
-                AccessTools.Method(typeof(BehFindEmptyNearbyCity), "getEmptyCity"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "getEmptyCity_Prefix"))
+                AccessTools.Method(typeof(City), "updateConquest"),
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "updateConquest_Prefix"))
             );
             harmony.Patch(
                 AccessTools.Method(typeof(City), "addZone"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "addZone_Prefix"))
             );
+            harmony.Patch(
+                AccessTools.Method(typeof(BaseSimObject), "canAttackTarget"),
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "canAttackTarget_Prefix"))
+            );*/
         }
 
-        public static bool getEmptyCity_Prefix(WorldTile pFromTile, Race pRace, ref City __result)
+        public static bool isWelcomedToJoin_Prefix(Actor pActor, City __instance, ref bool __result)
         {
-            bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
-            if (!modEnabled) {
-                return true;
-            }
+            bool allowSubspecies = (bool) conf["FV"]["allowSubspecies"].GetValue();
+            bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
+            bool allowCulture = (bool) conf["FV"]["allowCulture"].GetValue();
 
-            BehaviourActionActor.temp_cities.Clear();
-            foreach (City item in BehaviourActionBase<Actor>.world.cities.list)
+            if (pActor.kingdom == __instance.kingdom)
             {
-                if (item.getTile() != null && !(Toolbox.DistVec3(pFromTile.posV, item.cityCenter) > 200f) && item.status.population <= 40 && (item.status.population <= 5 || item.status.housingFree != 0) && item.getTile().isSameIsland(pFromTile))
+                __result = true;
+                return false;
+            }
+            if (allowSubspecies || pActor.isSameSubspecies(getMainSubspecies()))
+            {
+                __result = true;
+                return false;
+            }
+            if (!__instance.hasCulture())
+            {
+                __result = false;
+                return false;
+            }
+            if (__instance.culture.hasTrait("xenophobic"))
+            {
+                __result = false;
+                return false;
+            }
+            if (pActor.hasCultureTrait("xenophobic"))
+            {
+                __result = false;
+                return false;
+            }
+            if (allowCulture || __instance.culture.hasTrait("xenophiles"))
+            {
+                if (!pActor.hasCulture())
                 {
-                    BehaviourActionActor.temp_cities.Add(item);
+                    __result = true;
+                    return false;
+                }
+                if (pActor.hasCultureTrait("xenophiles"))
+                {
+                    __result = true;
+                    return false;
                 }
             }
-            City random = Toolbox.getRandom(BehaviourActionActor.temp_cities);
-            BehaviourActionActor.temp_cities.Clear();
-            __result = random;
+            if (allowSpecies || __instance.isSameSpeciesAsActor(pActor))
+            {
+                __result = true;
+                return false;
+            }
+            __result = false;
             return false;
         }
-
+/*
         public static bool isPossibleToJoin_Prefix(Actor pActor, ref bool __result)
         {
 
@@ -325,5 +357,6 @@ namespace FriendlyVillagers
 
             return false;
         }
+    */
     }
 }

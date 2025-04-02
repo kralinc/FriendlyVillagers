@@ -1,13 +1,19 @@
 {
     "FV": [
         {
-            "Id": "enableMod",
+            "Id": "allowSubspecies",
             "Type": "SWITCH",
             "IconPath": "ui/icons/iconHideGUI",
             "BoolVal": true
         },
         {
-            "Id": "allowDestroyBuildings",
+            "Id": "allowSpecies",
+            "Type": "SWITCH",
+            "IconPath": "ui/icons/iconHideUI",
+            "BoolVal": true        
+        },
+        {
+            "Id": "allowCultures",
             "Type": "SWITCH",
             "IconPath": "ui/icons/iconHideUI",
             "BoolVal": true        

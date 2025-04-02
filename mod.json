@@ -1,8 +1,8 @@
 {
-  "name": "Friendly Villagers",
+  "name": "Tolerant Empires",
   "author": "carpaldunnel",
   "version": "1.4.0",
-  "description": "Villagers don't get killed in different-race wars.",
-  "targetGameBuild": 558,
+  "description": "Empires can be composed of multiple species, subspecies, and cultures.",
+  "targetGameBuild": 645,
   "iconPath": "icon.png"
 }
