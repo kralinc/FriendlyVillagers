@@ -1,7 +1,7 @@
 {
   "name": "Friendly Villagers",
   "author": "carpaldunnel",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Villagers don't get killed in different-race wars.",
   "targetGameBuild": 558,
   "iconPath": "icon.png"
