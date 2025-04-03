@@ -22,40 +22,40 @@ namespace FriendlyVillagers
                 AccessTools.Method(typeof(City), "isWelcomedToJoin"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "isWelcomedToJoin_Prefix"))
             );
-            /*harmony.Patch(
-                AccessTools.Method(typeof(BehJoinCity), "isPossibleToJoin"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "isPossibleToJoin_Prefix"))
+            harmony.Patch(
+                AccessTools.Method(typeof(BehFindLover), "checkIfPossibleLover"),
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "checkIfPossibleLover_Prefix"))
             );
             harmony.Patch(
-                AccessTools.Method(typeof(BehFindSameRaceActor), "execute"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "findSameRaceActor_Prefix"))
+                AccessTools.Method(typeof(Actor), "canFallInLoveWith"),
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "canFallInLoveWith_Prefix"))
             );
             harmony.Patch(
                 AccessTools.Method(typeof(City), "updateConquest"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "updateConquest_Prefix"))
             );
-            harmony.Patch(
+            /*harmony.Patch(
                 AccessTools.Method(typeof(City), "addZone"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "addZone_Prefix"))
-            );
+            );*/
             harmony.Patch(
                 AccessTools.Method(typeof(BaseSimObject), "canAttackTarget"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "canAttackTarget_Prefix"))
-            );*/
+            );
         }
 
         public static bool isWelcomedToJoin_Prefix(Actor pActor, City __instance, ref bool __result)
         {
             bool allowSubspecies = (bool) conf["FV"]["allowSubspecies"].GetValue();
             bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
-            bool allowCulture = (bool) conf["FV"]["allowCulture"].GetValue();
+            bool allowCulture = (bool) conf["FV"]["allowCultures"].GetValue();
 
             if (pActor.kingdom == __instance.kingdom)
             {
                 __result = true;
                 return false;
             }
-            if (allowSubspecies || pActor.isSameSubspecies(getMainSubspecies()))
+            if (allowSubspecies || pActor.isSameSubspecies(__instance.getMainSubspecies()))
             {
                 __result = true;
                 return false;
@@ -96,101 +96,122 @@ namespace FriendlyVillagers
             __result = false;
             return false;
         }
-/*
-        public static bool isPossibleToJoin_Prefix(Actor pActor, ref bool __result)
+
+        public static bool checkIfPossibleLover_Prefix(Actor pActor, Actor pTarget, ref bool __result)
         {
+            bool allowSubspecies = (bool) conf["FV"]["allowSubspecies"].GetValue();
+            bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
 
-            bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
-            if (!modEnabled) {
-                return true;
-            }
 
-            City city = pActor.currentTile.zone.city;
-            if (city == null)
+            if (pTarget == pActor)
             {
                 __result = false;
                 return false;
             }
-            if (city == pActor.city)
+            if (!(allowSubspecies || allowSpecies) && !pTarget.hasSubspecies())
             {
                 __result = false;
                 return false;
             }
-            if (city.kingdom != pActor.kingdom && !pActor.kingdom.isNomads())
+            if (!pTarget.isAlive())
             {
                 __result = false;
                 return false;
             }
-            if (pActor.city != null)
+            if (!pTarget.canFallInLoveWith(pActor))
             {
-                if (pActor.isKing())
-                {
-                    __result = false;
-                    return false;
-                }
-                if (pActor.isCityLeader())
-                {
-                    __result = false;
-                    return false;
-                }
-                if (pActor.city.getPopulationTotal() < city.getPopulationTotal())
-                {
-                    __result = false;
-                    return false;
-                }
+                __result = false;
+                return false;
             }
             __result = true;
             return false;
         }
 
-        public static bool findSameRaceActor_Prefix(Actor pActor, ref BehResult __result)
-        {
-            bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
-            if (!modEnabled) {
-                return true;
-            }
+        public static bool canFallInLoveWith_Prefix(Actor pTarget, Actor __instance, ref bool __result) {
+            bool allowRelationships = (bool) conf["FV"]["allowRelationships"].GetValue();
 
-            Actor beh_actor_target = null;
-            pActor.currentTile.region.island.actors.ShuffleOne();
-            foreach (Actor actor in pActor.currentTile.region.island.actors)
+            if (__instance.hasLover())
             {
-                if (!(actor == pActor) && actor.isAlive() && actor.currentTile.isSameIsland(pActor.currentTile) && !(actor.data.created_time > pActor.data.created_time))
-                {
-                    beh_actor_target = actor;
-                }
-            }
-            pActor.beh_actor_target = beh_actor_target;
-            if (pActor.beh_actor_target == null)
-            {
-                __result = BehResult.Stop;
+                __result = false;
                 return false;
             }
-            __result = BehResult.Continue;
+            if (!__instance.isAdult())
+            {
+                __result = false;
+                return false;
+            }
+            if (!__instance.isBreedingAge())
+            {
+                __result = false;
+                return false;
+            }
+            if (!__instance.subspecies.needs_mate)
+            {
+                __result = false;
+                return false;
+            }
+            if (!allowRelationships && !__instance.isSameSpecies(pTarget))
+            {
+                __result = false;
+                return false;
+            }
+            if (!allowRelationships && !__instance.isSameSubspecies(pTarget.subspecies))
+            {
+                __result = false;
+                return false;
+            }
+            if (!__instance.isSameSpecies(pTarget) && ((!pTarget.isSapient() && !__instance.isSapient()) || (pTarget.isSapient() != __instance.isSapient())))
+            {
+                __result = false;
+                return false;
+            }
+            if (!__instance.subspecies.isPartnerSuitableForReproduction(__instance, pTarget))
+            {
+                __result = false;
+                return false;
+            }
+            if (pTarget.hasLover())
+            {
+                __result = false;
+                return false;
+            }
+            if (!pTarget.isAdult())
+            {
+                __result = false;
+                return false;
+            }
+            if (!pTarget.isBreedingAge())
+            {
+                __result = false;
+                return false;
+            }
+            if (__instance.isSapient() && __instance.hasFamily())
+            {
+                __instance.isRelatedTo(pTarget);
+                __result = true;
+                return false;
+            }
+            __result = true;
             return false;
         }
 
         public static bool updateConquest_Prefix(Actor pActor, City __instance) {
-            bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
-            if (!modEnabled) {
+            bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
+            if (!allowSpecies) {
                 return true;
             }
-            if (pActor.kingdom.isCiv() && (pActor.kingdom == __instance.kingdom || pActor.kingdom.isEnemy(__instance.kingdom)))
+            if (pActor.isKingdomCiv() && (allowSpecies || !(pActor.kingdom.getSpecies() != __instance.kingdom.getSpecies())) && (pActor.kingdom == __instance.kingdom || pActor.kingdom.isEnemy(__instance.kingdom)))
             {
                 __instance.addCapturePoints(pActor, 1);
-                return false;
             }
             return false;
         }
 
-        public static bool canAttackTarget_Prefix(BaseSimObject pTarget, BaseSimObject __instance, ref bool __result)
+        public static bool canAttackTarget_Prefix(BaseSimObject pTarget, bool pCheckForFactions, BaseSimObject __instance, ref bool __result)
         {
-
-            bool allowDestroyBuildings = (bool) conf["FV"]["allowDestroyBuildings"].GetValue();
-            bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
-
-            if (!modEnabled) {
-                return true;
-            }
+            bool allowSubspecies = (bool) conf["FV"]["allowSubspecies"].GetValue();
+            bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
+            bool allowCulture = (bool) conf["FV"]["allowCultures"].GetValue();
 
             if (!__instance.isAlive())
             {
@@ -202,93 +223,105 @@ namespace FriendlyVillagers
                 __result = false;
                 return false;
             }
-            bool flag = __instance.isActor();
-            WeaponType weaponType;
-            if (flag)
+            string tSpeciesID = string.Empty;
+            bool tThisIsActor = __instance.isActor();
+            WeaponType tAttackType;
+            if (tThisIsActor)
             {
-                if (__instance.a.asset.skipFightLogic)
+                if (__instance.a.asset.skip_fight_logic)
                 {
                     __result = false;
                     return false;
                 }
-                weaponType = __instance.a.s_attackType;
+                tSpeciesID = __instance.a.asset.id;
+                tAttackType = __instance.a.s_type_attack;
             }
             else
             {
-                weaponType = WeaponType.Range;
+                tSpeciesID = __instance.b.kingdom.getSpecies();
+                tAttackType = WeaponType.Range;
             }
             if (pTarget.isActor())
             {
-                Actor actor = pTarget.a;
-                if (!actor.asset.canBeKilledByStuff)
+                Actor tActorTarget = pTarget.a;
+                if (!tActorTarget.asset.can_be_killed_by_stuff)
                 {
                     __result = false;
                     return false;
                 }
-                if (actor.isInsideSomething())
+                if (tActorTarget.isInsideSomething())
                 {
                     __result = false;
                     return false;
                 }
-                if (actor.ai.action != null && actor.ai.action.special_prevent_can_be_attacked)
+                if (tActorTarget.isFlying() && tAttackType == WeaponType.Melee)
                 {
                     __result = false;
                     return false;
                 }
-                if (actor.isInMagnet())
+                if (tActorTarget.ai.action != null && tActorTarget.ai.action.special_prevent_can_be_attacked)
                 {
                     __result = false;
                     return false;
                 }
-                if (flag && __instance.a.s_attackType == WeaponType.Melee && pTarget.zPosition.y > 0f)
+                if (tActorTarget.isInMagnet())
                 {
                     __result = false;
                     return false;
                 }
-                if (!actor.kingdom.asset.mad && !__instance.kingdom.asset.mad && !World.world.worldLaws.world_law_angry_civilians.boolVal)
+                if (pCheckForFactions && __instance.areFoes(pTarget) && tActorTarget.isKingdomCiv() && __instance.isKingdomCiv() && !__instance.hasStatusTantrum() && !tActorTarget.hasStatusTantrum() && !WorldLawLibrary.world_law_angry_civilians.isEnabled())
                 {
-                    if (actor.professionAsset.is_civilian)
+                    if ((allowSpecies || tActorTarget.asset.id == tSpeciesID) && tActorTarget.profession_asset.is_civilian)
                     {
                         __result = false;
                         return false;
                     }
-                    if (flag && __instance.a.professionAsset.is_civilian)
+                    if ((allowSpecies || tActorTarget.asset.id == tSpeciesID) && tThisIsActor && __instance.a.profession_asset.is_civilian)
                     {
                         __result = false;
                         return false;
                     }
                 }
-                if (actor.isFlying() && weaponType == WeaponType.Melee)
+                if (pCheckForFactions && tThisIsActor && __instance.kingdom.asset.attack_each_other_when_hungry && (allowSpecies || __instance.a.isSameSpecies(tActorTarget)))
                 {
-                    __result = false;
-                    return false;
+                    Family tFamilyThis = __instance.a.family;
+                    Family tFamilyTarget = tActorTarget.family;
+                    if (tFamilyTarget == null || tFamilyThis == null)
+                    {
+                        __result = false;
+                        return false;
+                    }
+                    if (__instance.a.hasFamily())
+                    {
+                        if (tFamilyTarget == tFamilyThis)
+                        {
+                            __result = false;
+                            return false;
+                        }
+                        if (!tFamilyTarget.areMostUnitsHungry() && !tFamilyThis.areMostUnitsHungry())
+                        {
+                            __result = false;
+                            return false;
+                        }
+                    }
                 }
             }
             else
             {
-                Building building = pTarget.b;
-                if (__instance.kingdom.isCiv() && building.asset.cityBuilding && building.asset.tower && flag && __instance.a.professionAsset.is_civilian 
-                    && !World.world.worldLaws.world_law_angry_civilians.boolVal && (building.kingdom.race == __instance.kingdom.race || !allowDestroyBuildings))
+                Building tBuildingTarget = pTarget.b;
+                if (__instance.isKingdomCiv() && tBuildingTarget.asset.city_building && tBuildingTarget.asset.tower && !tBuildingTarget.isCiv() && tThisIsActor && __instance.a.profession_asset.is_civilian && !WorldLawLibrary.world_law_angry_civilians.isEnabled() && (allowSpecies || tBuildingTarget.kingdom.getSpecies() == __instance.kingdom.getSpecies()))
                 {
                     __result = false;
                     return false;
                 }
-                if (flag)
+                if (tThisIsActor)
                 {
-                    if (__instance.a.professionAsset.is_civilian && building.asset.cityBuilding && building.kingdom != null) {
-                        __result = false;
-                        return false;
-                    }
-                    if (__instance.a.professionAsset.can_capture && building.asset.cityBuilding && !allowDestroyBuildings) {
-                        __result = false;
-                        return false;
-                    }
-                    if (__instance.a.asset.canAttackBuildings)
+                    if (__instance.a.asset.can_attack_buildings)
                     {
                         __result = true;
                         return false;
                     }
-                    if (__instance.a.asset.canAttackBrains && pTarget.kingdom.asset.brain)
+                    if (__instance.a.asset.can_attack_brains && pTarget.kingdom.asset.brain)
                     {
                         __result = true;
                         return false;
@@ -297,31 +330,35 @@ namespace FriendlyVillagers
                     return false;
                 }
             }
-            if (flag)
+            if (tThisIsActor)
             {
-                if (__instance.a.asset.oceanCreature && !__instance.a.asset.landCreature)
+                ActorAsset tActorAsset = __instance.a.asset;
+                if (!__instance.a.isWaterCreature() || !__instance.a.hasRangeAttack())
                 {
-                    if (!pTarget.isInLiquid())
+                    if (__instance.a.isWaterCreature() && !tActorAsset.force_land_creature)
+                    {
+                        if (!pTarget.isInLiquid())
+                        {
+                            __result = false;
+                            return false;
+                        }
+                        if (!pTarget.current_tile.isSameIsland(__instance.current_tile))
+                        {
+                            __result = false;
+                            return false;
+                        }
+                    }
+                    else if (tAttackType == WeaponType.Melee && pTarget.isInLiquid() && !__instance.a.isWaterCreature())
                     {
                         __result = false;
                         return false;
                     }
-                    if (!pTarget.currentTile.isSameIsland(__instance.currentTile))
-                    {
-                        __result = false;
-                        return false;
-                    }
-                }
-                else if (weaponType == WeaponType.Melee && pTarget.isInLiquid() && !__instance.a.asset.oceanCreature)
-                {
-                    __result = false;
-                    return false;
                 }
             }
             __result = true;
             return false;
         }
-
+/*
         public static bool addZone_Prefix(TileZone pZone, City __instance) {
             bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
             if (!modEnabled) {
@@ -329,6 +366,7 @@ namespace FriendlyVillagers
             }
             if (__instance.zones.Contains(pZone))
             {
+                __result = false;
                 return false;
             }
             if (pZone.city != null)

@@ -3,7 +3,9 @@
     "allowDestroyBuildings Description": "Allow different subspecies in the same kingdom.",
     "allowSpecies": "Allow Different Species",
     "allowSpecies Description": "Allow different species in the same kingdom.",
-    "allowCulture": "Allow Different Cultures",
-    "allowCulture Description": "Allow different cultures in the same kingdom.",
+    "allowCultures": "Allow Different Cultures",
+    "allowCultures Description": "Allow different cultures in the same kingdom.",
+    "allowRelationships": "Allow Cross-Species Relationships",
+    "allowRelationships Description": "Allow relationships between different species and sub-species.",
     "FV": "Tolerant Empires"
 }
