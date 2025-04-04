@@ -1,8 +1,8 @@
 {
-  "name": "Tolerant Empires",
+  "name": "Friendly Villagers",
   "author": "carpaldunnel",
   "version": "1.4.0",
-  "description": "Empires can be composed of multiple species, subspecies, and cultures.",
+  "description": "Empires can be composed of multiple species and subspecies.",
   "targetGameBuild": 645,
   "iconPath": "icon.png"
 }

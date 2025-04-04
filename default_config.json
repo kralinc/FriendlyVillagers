@@ -17,12 +17,6 @@
             "Type": "SWITCH",
             "IconPath": "ui/icons/iconHideUI",
             "BoolVal": true        
-        },
-        {
-            "Id": "allowRelationships",
-            "Type": "SWITCH",
-            "IconPath": "ui/icons/iconHideUI",
-            "BoolVal": true 
         }
     ]
 }

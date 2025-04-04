@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Collections.Generic;
 using NeoModLoader.api;
 using NeoModLoader.General;
 using UnityEngine;
@@ -23,24 +24,24 @@ namespace FriendlyVillagers
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "isWelcomedToJoin_Prefix"))
             );
             harmony.Patch(
-                AccessTools.Method(typeof(BehFindLover), "checkIfPossibleLover"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "checkIfPossibleLover_Prefix"))
-            );
-            harmony.Patch(
-                AccessTools.Method(typeof(Actor), "canFallInLoveWith"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "canFallInLoveWith_Prefix"))
-            );
-            harmony.Patch(
                 AccessTools.Method(typeof(City), "updateConquest"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "updateConquest_Prefix"))
+            );
+            harmony.Patch(
+                AccessTools.Method(typeof(BaseSimObject), "canAttackTarget"),
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "canAttackTarget_Prefix"))
             );
             /*harmony.Patch(
                 AccessTools.Method(typeof(City), "addZone"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "addZone_Prefix"))
             );*/
             harmony.Patch(
-                AccessTools.Method(typeof(BaseSimObject), "canAttackTarget"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "canAttackTarget_Prefix"))
+                AccessTools.Method(typeof(City), "findKingdomToJoinAfterCapture"),
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "findKingdomToJoinAfterCapture_Prefix"))
+            );
+            harmony.Patch(
+                AccessTools.Method(typeof(BaseSimObject), "checkObjectList"),
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "checkObjectList_Prefix"))
             );
         }
 
@@ -94,104 +95,6 @@ namespace FriendlyVillagers
                 return false;
             }
             __result = false;
-            return false;
-        }
-
-        public static bool checkIfPossibleLover_Prefix(Actor pActor, Actor pTarget, ref bool __result)
-        {
-            bool allowSubspecies = (bool) conf["FV"]["allowSubspecies"].GetValue();
-            bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
-
-
-            if (pTarget == pActor)
-            {
-                __result = false;
-                return false;
-            }
-            if (!(allowSubspecies || allowSpecies) && !pTarget.hasSubspecies())
-            {
-                __result = false;
-                return false;
-            }
-            if (!pTarget.isAlive())
-            {
-                __result = false;
-                return false;
-            }
-            if (!pTarget.canFallInLoveWith(pActor))
-            {
-                __result = false;
-                return false;
-            }
-            __result = true;
-            return false;
-        }
-
-        public static bool canFallInLoveWith_Prefix(Actor pTarget, Actor __instance, ref bool __result) {
-            bool allowRelationships = (bool) conf["FV"]["allowRelationships"].GetValue();
-
-            if (__instance.hasLover())
-            {
-                __result = false;
-                return false;
-            }
-            if (!__instance.isAdult())
-            {
-                __result = false;
-                return false;
-            }
-            if (!__instance.isBreedingAge())
-            {
-                __result = false;
-                return false;
-            }
-            if (!__instance.subspecies.needs_mate)
-            {
-                __result = false;
-                return false;
-            }
-            if (!allowRelationships && !__instance.isSameSpecies(pTarget))
-            {
-                __result = false;
-                return false;
-            }
-            if (!allowRelationships && !__instance.isSameSubspecies(pTarget.subspecies))
-            {
-                __result = false;
-                return false;
-            }
-            if (!__instance.isSameSpecies(pTarget) && ((!pTarget.isSapient() && !__instance.isSapient()) || (pTarget.isSapient() != __instance.isSapient())))
-            {
-                __result = false;
-                return false;
-            }
-            if (!__instance.subspecies.isPartnerSuitableForReproduction(__instance, pTarget))
-            {
-                __result = false;
-                return false;
-            }
-            if (pTarget.hasLover())
-            {
-                __result = false;
-                return false;
-            }
-            if (!pTarget.isAdult())
-            {
-                __result = false;
-                return false;
-            }
-            if (!pTarget.isBreedingAge())
-            {
-                __result = false;
-                return false;
-            }
-            if (__instance.isSapient() && __instance.hasFamily())
-            {
-                __instance.isRelatedTo(pTarget);
-                __result = true;
-                return false;
-            }
-            __result = true;
             return false;
         }
 
@@ -396,5 +299,92 @@ namespace FriendlyVillagers
             return false;
         }
     */
+        public static bool findKingdomToJoinAfterCapture_Prefix(Kingdom pKingdom, ListPool<War> pWars, City __instance, ref Kingdom __result) 
+        {
+            bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
+
+            Kingdom tResultKingdom = null;
+            for (int i = 0; i < pWars.Count; i++)
+            {
+                War tWar = pWars[i];
+                if (!tWar.isTotalWar() && tWar.hasKingdom(__instance.kingdom) && tWar.isInWarWith(pKingdom, __instance.kingdom))
+                {
+                    if (tWar.main_attacker == pKingdom || tWar.main_defender == pKingdom)
+                    {
+                        break;
+                    }
+                    if (tWar.isAttacker(__instance.kingdom) && tWar.main_defender != null)
+                    {
+                        tResultKingdom = ((!__instance.neighbours_kingdoms.Contains(tWar.main_defender)) ? ((!__instance.neighbours_kingdoms.Contains(pKingdom)) ? tWar.main_defender : pKingdom) : tWar.main_defender);
+                        break;
+                    }
+                    if (tWar.isDefender(__instance.kingdom) && tWar.main_attacker != null)
+                    {
+                        tResultKingdom = ((!__instance.neighbours_kingdoms.Contains(tWar.main_attacker)) ? ((!__instance.neighbours_kingdoms.Contains(pKingdom)) ? tWar.main_attacker : pKingdom) : tWar.main_attacker);
+                        break;
+                    }
+                }
+            }
+            if (tResultKingdom == null)
+            {
+                tResultKingdom = pKingdom;
+            }
+            else if (!allowSpecies && tResultKingdom.getSpecies() != __instance.kingdom.getSpecies())
+            {
+                tResultKingdom = pKingdom;
+            }
+            __result = tResultKingdom;
+            return false;
+        }
+
+        public static bool checkObjectList_Prefix(IEnumerable<BaseSimObject> pList, bool pFindClosest, float pMaxDist, bool pIgnoreStunned, out BaseSimObject pBestObjectLast, BaseSimObject __instance)
+        {
+            bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
+
+            float tBestDist = float.MaxValue;
+            float tDist = float.MaxValue;
+            BaseSimObject tBestObject = null;
+            bool tHasMelee = __instance.isActor() && __instance.a.hasMeleeAttack();
+            WorldTile tCurrentTile = __instance.current_tile;
+            Vector2Int tCurrentPos = __instance.current_tile.pos;
+            foreach (BaseSimObject tObject in pList)
+            {
+                if (!tObject.isAlive() || tObject == __instance)
+                {
+                    continue;
+                }
+                WorldTile tObjectTile = tObject.current_tile;
+                if (pFindClosest)
+                {
+                    tDist = Toolbox.DistVec2(tObjectTile.pos, tCurrentPos);
+                    if (tDist >= tBestDist || tDist > pMaxDist)
+                    {
+                        continue;
+                    }
+                }
+                if ((pIgnoreStunned && tObject.isActor() && tObject.a.hasStatusStunned()) || !__instance.canAttackTarget(tObject) || (tHasMelee && !tObjectTile.isSameIsland(tCurrentTile) && (tObjectTile.Type.block || !tCurrentTile.region.island.isConnectedWith(tObjectTile.region.island))) || (tObject.isBuilding() && __instance.isKingdomCiv() && tObject.b.asset.city_building && !tObject.b.asset.tower && (allowSpecies || tObject.kingdom.getSpecies() == __instance.kingdom.getSpecies())) || __instance.shouldIgnoreTarget(tObject))
+                {
+                    continue;
+                }
+                if (pFindClosest)
+                {
+                    if (tDist < tBestDist)
+                    {
+                        tBestObject = tObject;
+                        tBestDist = tDist;
+                        if (tBestDist < 2f)
+                        {
+                            pBestObjectLast = tBestObject;
+                            return false;
+                        }
+                    }
+                    continue;
+                }
+                pBestObjectLast = tObject;
+                return false;
+            }
+            pBestObjectLast = tBestObject;
+            return false;
+        }
     }
 }
