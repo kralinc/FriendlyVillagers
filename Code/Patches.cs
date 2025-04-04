@@ -31,10 +31,6 @@ namespace FriendlyVillagers
                 AccessTools.Method(typeof(BaseSimObject), "canAttackTarget"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "canAttackTarget_Prefix"))
             );
-            /*harmony.Patch(
-                AccessTools.Method(typeof(City), "addZone"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "addZone_Prefix"))
-            );*/
             harmony.Patch(
                 AccessTools.Method(typeof(City), "findKingdomToJoinAfterCapture"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "findKingdomToJoinAfterCapture_Prefix"))
@@ -261,44 +257,7 @@ namespace FriendlyVillagers
             __result = true;
             return false;
         }
-/*
-        public static bool addZone_Prefix(TileZone pZone, City __instance) {
-            bool modEnabled = (bool) conf["FV"]["enableMod"].GetValue();
-            if (!modEnabled) {
-                return true;
-            }
-            if (__instance.zones.Contains(pZone))
-            {
-                __result = false;
-                return false;
-            }
-            if (pZone.city != null)
-            {
-                pZone.city.removeZone(pZone);
-            }
-            __instance.zones.Add(pZone);
-            pZone.setCity(__instance);
-            __instance.updateCityCenter();
-            if (World.world.city_zone_helper.city_place_finder.hasPossibleZones())
-            {
-                World.world.city_zone_helper.city_place_finder.setDirty();
-            }
-            __instance.setStatusDirty();
-            Toolbox.temp_list_buildings_2.Clear();
-            Toolbox.temp_list_buildings_2.AddRange(pZone.abandoned);
-            for (int i = 0; i < Toolbox.temp_list_buildings_2.Count; i++)
-            {
-                Building building = Toolbox.temp_list_buildings_2[i];
-                if (building.asset.cityBuilding && building.data.state == BuildingState.CivAbandoned)
-                {
-                    __instance.addBuilding(building);
-                    building.retake();
-                }
-            }
-
-            return false;
-        }
-    */
+        
         public static bool findKingdomToJoinAfterCapture_Prefix(Kingdom pKingdom, ListPool<War> pWars, City __instance, ref Kingdom __result) 
         {
             bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
