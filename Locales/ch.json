@@ -1,8 +1,10 @@
 {
-    "Empires can be composed of multiple species and subspecies._cz": "可以由多個物種和亞種共組王國",
-    "allowDestroyBuildings": "異族摧毀建築",
-    "allowDestroyBuildings Description": "允許異族士兵在戰爭中摧毀別國的建築",
-    "enableMod": "啟用異族占領",
-    "enableMod Description": "可理解為實時的模組開關",
+    "Empires can be composed of multiple species and subspecies._ch": "可以由多個物種和亞種共組王國",
+    "allowSubspecies": "亞種同居",
+    "allowSubspecies Description": "允許同一國家有相同物種的不同亞種",
+    "allowSpecies": "物種相和",
+    "allowSpecies Description": "允許同一國家有不同物種",
+    "allowCultures": "文明互見",
+    "allowCultures Description": "允許同一國家有不同的文明",
     "FV": "異族占領"
 }
