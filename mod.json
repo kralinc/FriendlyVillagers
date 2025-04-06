@@ -1,8 +1,8 @@
 {
   "name": "Friendly Villagers",
   "author": "carpaldunnel",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Empires can be composed of multiple species and subspecies.",
-  "targetGameBuild": 645,
+  "targetGameBuild": 651,
   "iconPath": "icon.png"
 }
