@@ -1,8 +1,10 @@
 {
-    "Villagers don't get killed in different-race wars._cz": "异族之间的战争不会再伤害平民",
-    "allowDestroyBuildings": "异族摧毁建筑",
-    "allowDestroyBuildings Description": "允许异族士兵在战争中摧毁别国的建筑",
-    "enableMod": "启用异族占领",
-    "enableMod Description": "可理解为实时的模组开关",
-    "FV": "异族占领"
+    "Empires can be composed of multiple species and subspecies._cz": "可以由多个物种和亚种共组王国",
+    "allowSubspecies": "亚种同居",
+    "allowSubspecies Description": "允许同一国家有相同物种的不同亚种",
+    "allowSpecies": "物种相和",
+    "allowSpecies Description": "允许同一国家有不同物种",
+    "allowCultures": "文明互见",
+    "allowCultures Description": "允许同一国家有不同文明",
+    "FV": "友善共处模组"
 }
