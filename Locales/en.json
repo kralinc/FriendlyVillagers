@@ -1,9 +1,7 @@
 {
-    "allowSubspecies": "Allow Different Subspecies",
-    "allowSubspecies Description": "Allow different subspecies in the same kingdom.",
-    "allowSpecies": "Allow Different Species",
-    "allowSpecies Description": "Allow different species in the same kingdom.",
-    "allowCultures": "Allow Different Cultures",
-    "allowCultures Description": "Allow different cultures in the same kingdom.",
+    "preventXenophobe": "Prevent Xenophobic Trait",
+    "preventXenophobe Description": "Prevent any cultures from being created with the Xenophobic trait.",
+    "baseMod": "Base Mod Functionality",
+    "baseMod Description": "Enable the mod's basic functionality.",
     "FV": "Friendly Villagers"
 }

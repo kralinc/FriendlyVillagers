@@ -24,35 +24,26 @@ namespace FriendlyVillagers
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "isWelcomedToJoin_Prefix"))
             );
             harmony.Patch(
-                AccessTools.Method(typeof(City), "updateConquest"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "updateConquest_Prefix"))
-            );
-            harmony.Patch(
                 AccessTools.Method(typeof(BaseSimObject), "canAttackTarget"),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "canAttackTarget_Prefix"))
             );
+            
             harmony.Patch(
-                AccessTools.Method(typeof(City), "findKingdomToJoinAfterCapture"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "findKingdomToJoinAfterCapture_Prefix"))
-            );
-            harmony.Patch(
-                AccessTools.Method(typeof(BaseSimObject), "checkObjectList"),
-                prefix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "checkObjectList_Prefix"))
+                AccessTools.Method(typeof(Culture), "createCulture"),
+                postfix: new HarmonyMethod(AccessTools.Method(typeof(Patches), "createCulture_Postfix"))
             );
         }
 
         public static bool isWelcomedToJoin_Prefix(Actor pActor, City __instance, ref bool __result)
         {
-            bool allowSubspecies = (bool) conf["FV"]["allowSubspecies"].GetValue();
-            bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
-            bool allowCulture = (bool) conf["FV"]["allowCultures"].GetValue();
+            bool baseMod = (bool) conf["FV"]["baseMod"].GetValue();
 
             if (pActor.kingdom == __instance.kingdom)
             {
                 __result = true;
                 return false;
             }
-            if (allowSubspecies || pActor.isSameSubspecies(__instance.getMainSubspecies()))
+            if (pActor.isSameSubspecies(__instance.getMainSubspecies()))
             {
                 __result = true;
                 return false;
@@ -72,20 +63,20 @@ namespace FriendlyVillagers
                 __result = false;
                 return false;
             }
-            if (allowCulture || __instance.culture.hasTrait("xenophiles"))
+            if (baseMod || __instance.culture.hasTrait("xenophiles"))
             {
                 if (!pActor.hasCulture())
                 {
                     __result = true;
                     return false;
                 }
-                if (pActor.hasCultureTrait("xenophiles"))
+                if (baseMod || pActor.hasCultureTrait("xenophiles"))
                 {
                     __result = true;
                     return false;
                 }
             }
-            if (allowSpecies || __instance.isSameSpeciesAsActor(pActor))
+            if (__instance.isSameSpeciesAsActor(pActor) || baseMod)
             {
                 __result = true;
                 return false;
@@ -94,24 +85,9 @@ namespace FriendlyVillagers
             return false;
         }
 
-        public static bool updateConquest_Prefix(Actor pActor, City __instance) {
-            bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
-            if (!allowSpecies) {
-                return true;
-            }
-            if (pActor.isKingdomCiv() && (allowSpecies || !(pActor.kingdom.getSpecies() != __instance.kingdom.getSpecies())) && (pActor.kingdom == __instance.kingdom || pActor.kingdom.isEnemy(__instance.kingdom)))
-            {
-                __instance.addCapturePoints(pActor, 1);
-            }
-            return false;
-        }
-
         public static bool canAttackTarget_Prefix(BaseSimObject pTarget, bool pCheckForFactions, BaseSimObject __instance, ref bool __result)
         {
-            bool allowSubspecies = (bool) conf["FV"]["allowSubspecies"].GetValue();
-            bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
-            bool allowCulture = (bool) conf["FV"]["allowCultures"].GetValue();
-
+            bool baseMod = (bool) conf["FV"]["baseMod"].GetValue();
             if (!__instance.isAlive())
             {
                 __result = false;
@@ -122,8 +98,8 @@ namespace FriendlyVillagers
                 __result = false;
                 return false;
             }
-            string tSpeciesID = string.Empty;
             bool tThisIsActor = __instance.isActor();
+            string tSpeciesID;
             WeaponType tAttackType;
             if (tThisIsActor)
             {
@@ -168,20 +144,25 @@ namespace FriendlyVillagers
                     __result = false;
                     return false;
                 }
-                if (pCheckForFactions && __instance.areFoes(pTarget) && tActorTarget.isKingdomCiv() && __instance.isKingdomCiv() && !__instance.hasStatusTantrum() && !tActorTarget.hasStatusTantrum() && !WorldLawLibrary.world_law_angry_civilians.isEnabled())
+                if (pCheckForFactions && __instance.areFoes(pTarget) && tActorTarget.isKingdomCiv() && __instance.isKingdomCiv() && !__instance.hasStatusTantrum() && !tActorTarget.hasStatusTantrum())
                 {
-                    if ((allowSpecies || tActorTarget.asset.id == tSpeciesID) && tActorTarget.profession_asset.is_civilian)
-                    {
-                        __result = false;
-                        return false;
-                    }
-                    if ((allowSpecies || tActorTarget.asset.id == tSpeciesID) && tThisIsActor && __instance.a.profession_asset.is_civilian)
-                    {
-                        __result = false;
-                        return false;
+                    bool tXenophobicAny = (tThisIsActor && __instance.a.hasXenophobic()) || tActorTarget.hasXenophobic();
+                    bool tAttackerIsChill = baseMod || (tThisIsActor && __instance.a.hasXenophiles()) || tActorTarget.hasXenophiles();
+                    bool tIgnoreCivilians = (tSpeciesID == tActorTarget.asset.id || tAttackerIsChill) && !tXenophobicAny;
+
+                    if (!WorldLawLibrary.world_law_angry_civilians.isEnabled()) {
+                        if (tActorTarget.profession_asset.is_civilian && tIgnoreCivilians) {
+                            __result = false;
+                            return false;
+                        }
+
+                        if (tThisIsActor && __instance.a.profession_asset.is_civilian && tIgnoreCivilians) {
+                            __result = false;
+                            return false;
+                        }
                     }
                 }
-                if (pCheckForFactions && tThisIsActor && __instance.kingdom.asset.attack_each_other_when_hungry && (allowSpecies || __instance.a.isSameSpecies(tActorTarget)))
+                if (pCheckForFactions && tThisIsActor && __instance.a.hasCannibalism() && __instance.a.isSameSpecies(tActorTarget))
                 {
                     Family tFamilyThis = __instance.a.family;
                     Family tFamilyTarget = tActorTarget.family;
@@ -208,7 +189,7 @@ namespace FriendlyVillagers
             else
             {
                 Building tBuildingTarget = pTarget.b;
-                if (__instance.isKingdomCiv() && tBuildingTarget.asset.city_building && tBuildingTarget.asset.tower && !tBuildingTarget.isCiv() && tThisIsActor && __instance.a.profession_asset.is_civilian && !WorldLawLibrary.world_law_angry_civilians.isEnabled() && (allowSpecies || tBuildingTarget.kingdom.getSpecies() == __instance.kingdom.getSpecies()))
+                if (__instance.isKingdomCiv() && tBuildingTarget.asset.city_building && tBuildingTarget.asset.tower && !tBuildingTarget.isCiv() && tThisIsActor && __instance.a.profession_asset.is_civilian && !WorldLawLibrary.world_law_angry_civilians.isEnabled() && ((baseMod && !__instance.a.hasXenophobic()) || tBuildingTarget.kingdom.getSpecies() == __instance.kingdom.getSpecies()))
                 {
                     __result = false;
                     return false;
@@ -257,93 +238,13 @@ namespace FriendlyVillagers
             __result = true;
             return false;
         }
-        
-        public static bool findKingdomToJoinAfterCapture_Prefix(Kingdom pKingdom, ListPool<War> pWars, City __instance, ref Kingdom __result) 
-        {
-            bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
 
-            Kingdom tResultKingdom = null;
-            for (int i = 0; i < pWars.Count; i++)
-            {
-                War tWar = pWars[i];
-                if (!tWar.isTotalWar() && tWar.hasKingdom(__instance.kingdom) && tWar.isInWarWith(pKingdom, __instance.kingdom))
-                {
-                    if (tWar.main_attacker == pKingdom || tWar.main_defender == pKingdom)
-                    {
-                        break;
-                    }
-                    if (tWar.isAttacker(__instance.kingdom) && tWar.main_defender != null)
-                    {
-                        tResultKingdom = ((!__instance.neighbours_kingdoms.Contains(tWar.main_defender)) ? ((!__instance.neighbours_kingdoms.Contains(pKingdom)) ? tWar.main_defender : pKingdom) : tWar.main_defender);
-                        break;
-                    }
-                    if (tWar.isDefender(__instance.kingdom) && tWar.main_attacker != null)
-                    {
-                        tResultKingdom = ((!__instance.neighbours_kingdoms.Contains(tWar.main_attacker)) ? ((!__instance.neighbours_kingdoms.Contains(pKingdom)) ? tWar.main_attacker : pKingdom) : tWar.main_attacker);
-                        break;
-                    }
-                }
-            }
-            if (tResultKingdom == null)
-            {
-                tResultKingdom = pKingdom;
-            }
-            else if (!allowSpecies && tResultKingdom.getSpecies() != __instance.kingdom.getSpecies())
-            {
-                tResultKingdom = pKingdom;
-            }
-            __result = tResultKingdom;
-            return false;
-        }
+        public static void createCulture_Postfix(Actor pActor, bool pAddDefaultTraits, Culture __instance) {
+            bool preventXenophobe = (bool) conf["FV"]["preventXenophobe"].GetValue();
 
-        public static bool checkObjectList_Prefix(IEnumerable<BaseSimObject> pList, bool pFindClosest, float pMaxDist, bool pIgnoreStunned, out BaseSimObject pBestObjectLast, BaseSimObject __instance)
-        {
-            bool allowSpecies = (bool) conf["FV"]["allowSpecies"].GetValue();
-
-            float tBestDist = float.MaxValue;
-            float tDist = float.MaxValue;
-            BaseSimObject tBestObject = null;
-            bool tHasMelee = __instance.isActor() && __instance.a.hasMeleeAttack();
-            WorldTile tCurrentTile = __instance.current_tile;
-            Vector2Int tCurrentPos = __instance.current_tile.pos;
-            foreach (BaseSimObject tObject in pList)
-            {
-                if (!tObject.isAlive() || tObject == __instance)
-                {
-                    continue;
-                }
-                WorldTile tObjectTile = tObject.current_tile;
-                if (pFindClosest)
-                {
-                    tDist = Toolbox.DistVec2(tObjectTile.pos, tCurrentPos);
-                    if (tDist >= tBestDist || tDist > pMaxDist)
-                    {
-                        continue;
-                    }
-                }
-                if ((pIgnoreStunned && tObject.isActor() && tObject.a.hasStatusStunned()) || !__instance.canAttackTarget(tObject) || (tHasMelee && !tObjectTile.isSameIsland(tCurrentTile) && (tObjectTile.Type.block || !tCurrentTile.region.island.isConnectedWith(tObjectTile.region.island))) || (tObject.isBuilding() && __instance.isKingdomCiv() && tObject.b.asset.city_building && !tObject.b.asset.tower && (allowSpecies || tObject.kingdom.getSpecies() == __instance.kingdom.getSpecies())) || __instance.shouldIgnoreTarget(tObject))
-                {
-                    continue;
-                }
-                if (pFindClosest)
-                {
-                    if (tDist < tBestDist)
-                    {
-                        tBestObject = tObject;
-                        tBestDist = tDist;
-                        if (tBestDist < 2f)
-                        {
-                            pBestObjectLast = tBestObject;
-                            return false;
-                        }
-                    }
-                    continue;
-                }
-                pBestObjectLast = tObject;
-                return false;
+            if (preventXenophobe) {
+                __instance.removeTrait("xenophobic");
             }
-            pBestObjectLast = tBestObject;
-            return false;
         }
     }
 }

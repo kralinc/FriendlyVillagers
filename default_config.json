@@ -1,19 +1,13 @@
 {
     "FV": [
         {
-            "Id": "allowSubspecies",
+            "Id": "preventXenophobe",
             "Type": "SWITCH",
-            "IconPath": "ui/icons/iconHideGUI",
+            "IconPath": "ui/icons/iconHideUI",
             "BoolVal": true
         },
         {
-            "Id": "allowSpecies",
-            "Type": "SWITCH",
-            "IconPath": "ui/icons/iconHideUI",
-            "BoolVal": true        
-        },
-        {
-            "Id": "allowCultures",
+            "Id": "baseMod",
             "Type": "SWITCH",
             "IconPath": "ui/icons/iconHideUI",
             "BoolVal": true        

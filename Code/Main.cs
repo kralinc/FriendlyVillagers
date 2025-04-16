@@ -11,6 +11,7 @@ namespace FriendlyVillagers{
         protected override void OnModLoad()
         {
             Patches.init(this.GetConfig());
+            NonPatch.init(this.GetConfig());
             LogInfo("Friendly Villagers Mod Loaded");
         }
     }
