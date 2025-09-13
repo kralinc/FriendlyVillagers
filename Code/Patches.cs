@@ -85,7 +85,7 @@ namespace FriendlyVillagers
             return false;
         }
 
-        public static bool canAttackTarget_Prefix(BaseSimObject pTarget, bool pCheckForFactions, BaseSimObject __instance, ref bool __result)
+        public static bool canAttackTarget_Prefix(BaseSimObject pTarget, bool pCheckForFactions, bool pAttackBuildings, BaseSimObject __instance, ref bool __result)
         {
             bool baseMod = (bool) conf["FV"]["baseMod"].GetValue();
             if (!__instance.isAlive())
@@ -99,6 +99,19 @@ namespace FriendlyVillagers
                 return false;
             }
             bool tThisIsActor = __instance.isActor();
+            if (pTarget.isBuilding() && !pAttackBuildings)
+            {
+                if (!tThisIsActor || !__instance.a.asset.unit_zombie)
+                {
+                    __result = false;
+                    return false;
+                }
+                if (!pTarget.kingdom.asset.brain)
+                {
+                    __result = false;
+                    return false;
+                }
+            }
             string tSpeciesID;
             WeaponType tAttackType;
             if (tThisIsActor)
@@ -109,7 +122,7 @@ namespace FriendlyVillagers
                     return false;
                 }
                 tSpeciesID = __instance.a.asset.id;
-                tAttackType = __instance.a.s_type_attack;
+                tAttackType = __instance.a._attack_asset.attack_type;
             }
             else
             {
@@ -147,8 +160,10 @@ namespace FriendlyVillagers
                 if (pCheckForFactions && __instance.areFoes(pTarget) && tActorTarget.isKingdomCiv() && __instance.isKingdomCiv() && !__instance.hasStatusTantrum() && !tActorTarget.hasStatusTantrum())
                 {
                     bool tXenophobicAny = (tThisIsActor && __instance.a.hasXenophobic()) || tActorTarget.hasXenophobic();
-                    bool tAttackerIsChill = baseMod || (tThisIsActor && __instance.a.hasXenophiles()) || tActorTarget.hasXenophiles();
-                    bool tIgnoreCivilians = (tSpeciesID == tActorTarget.asset.id || tAttackerIsChill) && !tXenophobicAny;
+                    bool tXenophileAny = (tThisIsActor && __instance.a.hasXenophiles()) || tActorTarget.hasXenophiles();
+                    bool tSameCulture = tThisIsActor && __instance.a.culture == tActorTarget.culture;
+                    bool tSameSpecies = tSpeciesID == tActorTarget.asset.id;
+                    bool tIgnoreCivilians = ((baseMod || tSameSpecies || tXenophileAny) && !tXenophobicAny) || (tSameCulture && tSameSpecies);
 
                     if (!WorldLawLibrary.world_law_angry_civilians.isEnabled()) {
                         if (tActorTarget.profession_asset.is_civilian && tIgnoreCivilians) {
@@ -189,23 +204,10 @@ namespace FriendlyVillagers
             else
             {
                 Building tBuildingTarget = pTarget.b;
-                if (__instance.isKingdomCiv() && tBuildingTarget.asset.city_building && tBuildingTarget.asset.tower && !tBuildingTarget.isCiv() && tThisIsActor && __instance.a.profession_asset.is_civilian && !WorldLawLibrary.world_law_angry_civilians.isEnabled() && ((baseMod && !__instance.a.hasXenophobic()) || tBuildingTarget.kingdom.getSpecies() == __instance.kingdom.getSpecies()))
+                if (__instance.isKingdomCiv() && tBuildingTarget.asset.city_building && tBuildingTarget.asset.tower
+                    && !tBuildingTarget.isCiv() && tThisIsActor && __instance.a.profession_asset.is_civilian && !WorldLawLibrary.world_law_angry_civilians.isEnabled()
+                    && (baseMod || tBuildingTarget.kingdom.getSpecies() == __instance.kingdom.getSpecies()))
                 {
-                    __result = false;
-                    return false;
-                }
-                if (tThisIsActor)
-                {
-                    if (__instance.a.asset.can_attack_buildings)
-                    {
-                        __result = true;
-                        return false;
-                    }
-                    if (__instance.a.asset.can_attack_brains && pTarget.kingdom.asset.brain)
-                    {
-                        __result = true;
-                        return false;
-                    }
                     __result = false;
                     return false;
                 }
