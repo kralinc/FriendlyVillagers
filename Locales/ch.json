@@ -1,10 +1,8 @@
 {
     "Empires can be composed of multiple species and subspecies._ch": "可以由多個物種和亞種共組王國",
-    "allowSubspecies": "亞種同居",
-    "allowSubspecies Description": "允許同一國家有相同物種的不同亞種",
-    "allowSpecies": "物種相和",
-    "allowSpecies Description": "允許同一國家有不同物種",
-    "allowCultures": "文化互見",
-    "allowCultures Description": "允許同一國家有不同文化",
+    "preventXenophobe": "物種相和",
+    "preventXenophobe Description": "通過禁止文明的“排外”特質，實現不同物種在城市中共存",
+    "baseMod": "模組基礎功能",
+    "baseMod Description": "讓國家對外友善，嗜血反向",
     "FV": "友善共處模組"
 }
